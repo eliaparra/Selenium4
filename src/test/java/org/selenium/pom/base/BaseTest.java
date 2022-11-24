@@ -20,6 +20,8 @@ import ru.yandex.qatools.ashot.Screenshot;
 import ru.yandex.qatools.ashot.shooting.ShootingStrategies;
 
 import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -49,13 +51,14 @@ public class BaseTest {
 
     @Parameters("browser")
     @AfterMethod
-    @Attachment(value = "Page screenshot", type = "image/png")
-    public synchronized void quitDriver(@Optional String browser, ITestResult result) {
+
+    public synchronized void quitDriver(@Optional String browser, ITestResult result) throws IOException {
 
         if (result.getStatus() == ITestResult.FAILURE) {
             File destFile = new File("scr" + File.separator + browser + File.separator + result.getTestClass().getRealClass().getSimpleName() + "_" + result.getMethod().getMethodName() + ".png");
             //takeScreenShot(destFile);
             takeScreenshotUsingAShot(destFile);
+            attachScreenshot();
         }
 
         getDriver().quit();
@@ -83,5 +86,18 @@ public class BaseTest {
         for (Cookie cookie : seleniumCookies) {
             getDriver().manage().addCookie(cookie);
         }
+    }
+
+    @Attachment(type = "image/png")
+    public byte[] attachScreenshot() throws IOException {
+        Screenshot screenshot = new AShot()
+                .shootingStrategy(ShootingStrategies.viewportPasting(100))
+                .takeScreenshot(getDriver());
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+       // TakesScreenshot takesScreenshot = (TakesScreenshot) getDriver();
+        //return takesScreenshot.getScreenshotAs(OutputType.BYTES);
+        ImageIO.write(screenshot.getImage(), "png", baos);
+        byte[] byteArr = baos.toByteArray();
+        return  byteArr;
     }
 }
